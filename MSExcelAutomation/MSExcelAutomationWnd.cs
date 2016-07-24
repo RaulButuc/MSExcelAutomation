@@ -7,16 +7,21 @@ namespace MSExcelAutomation
 {
     public partial class MSExcelAutomationWnd : Form
     {
+
+        private System.Globalization.CultureInfo oldCI;
+
+        private Excel.Application oXL;
+        private Excel._Workbook oWB;
+        private Excel._Worksheet oSheet;
+
         public MSExcelAutomationWnd()
         {
             InitializeComponent();
+            SetNewCurrentCulture();
         }
 
         private void automateExcelSpreadsheet_Click(object sender, EventArgs e)
         {
-            Excel.Application oXL;
-            Excel._Workbook oWB;
-            Excel._Worksheet oSheet;
             Excel.Range oRng;
 
             try
@@ -25,7 +30,9 @@ namespace MSExcelAutomation
                 oXL.Visible = true;
 
                 oWB = oXL.Workbooks.Add(Missing.Value);
+                oWB.Title = "Test";
                 oSheet = (Excel._Worksheet)oWB.ActiveSheet;
+                oSheet.Name = "Test";
 
                 oSheet.Cells[1, 1] = "First Name";
                 oSheet.Cells[1, 2] = "Last Name";
@@ -33,6 +40,7 @@ namespace MSExcelAutomation
                 oSheet.Cells[1, 4] = "Salary";
 
                 oSheet.get_Range("A1", "D1").Font.Bold = true;
+                oSheet.get_Range("A1", "D1").RowHeight = 37;
                 oSheet.get_Range("A1", "D1").VerticalAlignment =
                     Excel.XlVAlign.xlVAlignCenter;
 
@@ -52,10 +60,10 @@ namespace MSExcelAutomation
                 oSheet.get_Range("A2", "B6").Value2 = saNames;
 
                 oRng = oSheet.get_Range("C2", "C6");
-                oRng.Formula = "=A2 & \" \" & B2";
+                oRng.Formula = "=A2 & \".\" & B2 & \"@\" & \"gmail.com\"";
 
                 oRng = oSheet.get_Range("D2", "D6");
-                oRng.Formula = "=RAND()*100000";
+                oRng.Formula = "=RAND()*10000";
                 oRng.NumberFormat = "$0.00";
 
                 oRng = oSheet.get_Range("A1", "D1");
@@ -87,7 +95,7 @@ namespace MSExcelAutomation
             string sMsg;
             int iNumQtrs;
 
-            for (iNumQtrs = 4; iNumQtrs >=2; --iNumQtrs)
+            for (iNumQtrs = 4; iNumQtrs >= 2; iNumQtrs--)
             {
                 sMsg = "Enter sales data for ";
                 sMsg = string.Concat(sMsg, iNumQtrs);
@@ -97,10 +105,14 @@ namespace MSExcelAutomation
                     MessageBoxButtons.YesNo);
 
                 if (iRet == DialogResult.Yes)
-                {
                     break;
-                }
             }
+
+            sMsg = "Displaying data for ";
+            sMsg = string.Concat(sMsg, iNumQtrs);
+            sMsg = string.Concat(sMsg, " quarter(s).");
+
+            MessageBox.Show(sMsg, "Quarterly Sales");
 
             oResizeRange = oWS.get_Range("E1", "E1").get_Resize(Missing.Value, iNumQtrs);
             oResizeRange.Formula = "=\"Q\" & COLUMN()-4 & CHAR(10) & \"Sales\"";
@@ -128,15 +140,15 @@ namespace MSExcelAutomation
             oChart = (Excel._Chart)oWB.Charts.Add(Missing.Value, Missing.Value,
                 Missing.Value, Missing.Value);
 
-            oResizeRange = oWS.get_Range("E2:E6", Missing.Value).
-                get_Resize(Missing.Value, iNumQtrs);
-            oChart.ChartWizard(oResizeRange, Excel.XlChartType.xl3DColumn, Missing.Value,
-                Excel.XlRowCol.xlColumns, Missing.Value, Missing.Value, Missing.Value,
-                Missing.Value, Missing.Value, Missing.Value, Missing.Value);
+            oResizeRange = oWS.get_Range("E2:E6").get_Resize(Missing.Value, iNumQtrs);
+
+            oChart.SetSourceData(oResizeRange, Excel.XlRowCol.xlColumns);
+            oChart.ChartType = Excel.XlChartType.xlColumnClustered;
+
             oSeries = (Excel.Series)oChart.SeriesCollection(1);
             oSeries.XValues = oWS.get_Range("A2", "A6");
             
-            for (int iRet = 1; iRet <= iNumQtrs; ++iRet)
+            for (int iRet = 1; iRet <= iNumQtrs; iRet++)
             {
                 oSeries = (Excel.Series)oChart.SeriesCollection(iRet);
                 string seriesName;
@@ -149,14 +161,60 @@ namespace MSExcelAutomation
             oChart.Location(Excel.XlChartLocation.xlLocationAsObject, oWS.Name);
 
             oResizeRange = (Excel.Range)oWS.Rows.get_Item(10, Missing.Value);
-            oWS.Shapes.Item("Chart 1").Top = (float)(double)oResizeRange.Top;
+            oWS.Shapes.Item("Chart 1").Top = (float)oResizeRange.Top;
             oResizeRange = (Excel.Range)oWS.Columns.get_Item(2, Missing.Value);
-            oWS.Shapes.Item("Chart 1").Left = (float)(double)oResizeRange.Left;
+            oWS.Shapes.Item("Chart 1").Left = (float)oResizeRange.Left;
         }
 
         private void closeMainWnd_Click(object sender, EventArgs e)
         {
-            ActiveForm.Close();
+            try
+            {
+                oWB.Close(false, Missing.Value, Missing.Value);
+                oXL.Quit();
+
+                releaseObject(oSheet);
+                releaseObject(oWB);
+                releaseObject(oXL);
+            }
+            catch (Exception exception)
+            {
+                
+            }
+            finally
+            {
+                ResetCurrentCulture();
+                ActiveForm.Close();
+            }
+        }
+
+        private void releaseObject(object obj)
+        {
+            try
+            {
+                System.Runtime.InteropServices.Marshal.ReleaseComObject(obj);
+                obj = null;
+            }
+            catch (Exception exception)
+            {
+                obj = null;
+                MessageBox.Show("Exception occured while releasing object " + exception.ToString());
+            }
+            finally
+            {
+                GC.Collect();
+            }
+        }
+
+        void SetNewCurrentCulture()
+        {
+            oldCI = System.Threading.Thread.CurrentThread.CurrentCulture;
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+        }
+
+        void ResetCurrentCulture()
+        {
+            System.Threading.Thread.CurrentThread.CurrentCulture = oldCI;
         }
     }
 }
