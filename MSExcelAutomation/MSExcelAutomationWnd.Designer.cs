@@ -38,7 +38,7 @@
             this.automateExcelSpreadsheet.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
             this.automateExcelSpreadsheet.Cursor = System.Windows.Forms.Cursors.Hand;
             this.automateExcelSpreadsheet.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
-            this.automateExcelSpreadsheet.Location = new System.Drawing.Point(300, 318);
+            this.automateExcelSpreadsheet.Location = new System.Drawing.Point(305, 317);
             this.automateExcelSpreadsheet.Margin = new System.Windows.Forms.Padding(4);
             this.automateExcelSpreadsheet.Name = "automateExcelSpreadsheet";
             this.automateExcelSpreadsheet.Size = new System.Drawing.Size(179, 32);
@@ -71,6 +71,7 @@
             this.Controls.Add(this.automateExcelSpreadsheet);
             this.Font = new System.Drawing.Font("Verdana", 11.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "MSExcelAutomationWnd";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
